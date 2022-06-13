@@ -17,7 +17,7 @@ public class ExplosiveBarrel : MonoBehaviour
         TryApplyColor();
     }
 
-    private void TryApplyColor()
+    public void TryApplyColor()
     {
         if (TypeBarrel == null)
             return;
@@ -36,7 +36,7 @@ public class ExplosiveBarrel : MonoBehaviour
         ExplosiveBarrelsHandler.ExistingBarrels.Remove(this);
     }
 
-    private void OnDrawGizmosSelected()
+    private void OnDrawGizmos()
     {
         if (TypeBarrel == null)
             return;

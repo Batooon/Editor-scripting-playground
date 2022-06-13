@@ -1,21 +1,30 @@
 using UnityEditor;
 
-[CustomEditor(typeof(BarrelType))]
+[CustomEditor(typeof(BarrelType)), CanEditMultipleObjects]
 public class BarrelTypeEditor : Editor
 {
+    private SerializedObject _so;
+    private SerializedProperty _propRadius;
+    private SerializedProperty _propDamage;
+    private SerializedProperty _propColor;
+    
+    private void OnEnable()
+    {
+        _so = serializedObject;
+        _propRadius = _so.FindProperty("Radius");
+        _propDamage = _so.FindProperty("Damage");
+        _propColor = _so.FindProperty("BarrelColor");
+    }
+
     public override void OnInspectorGUI()
     {
-        var barrel = target as BarrelType;
-
-        var newRadius = EditorGUILayout.FloatField("radius", barrel.Radius);
-
-        if (newRadius != barrel.Radius)
+        _so.Update();
+        EditorGUILayout.PropertyField(_propRadius);
+        EditorGUILayout.PropertyField(_propDamage);
+        EditorGUILayout.PropertyField(_propColor);
+        if (_so.ApplyModifiedProperties())
         {
-            Undo.RecordObject(barrel, "change barrel radius");
-            barrel.Radius = newRadius;
+            ExplosiveBarrelsHandler.UpdateAllBarrelColors();
         }
-        
-        barrel.Damage = EditorGUILayout.FloatField("damage", barrel.Damage);
-        barrel.BarrelColor = EditorGUILayout.ColorField("color", barrel.BarrelColor);
     }
 }

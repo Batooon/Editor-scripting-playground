@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9228c68e4e9fe3a4d8b5cc28bfa71a77, type: 3}
   m_Name: Red Barrel
   m_EditorClassIdentifier: 
-  <Radius>k__BackingField: 3.71
-  <Damage>k__BackingField: 80
-  <BarrelColor>k__BackingField: {r: 0.754717, g: 0.08899963, b: 0.08899963, a: 1}
+  Radius: 4.6
+  Damage: 10
+  BarrelColor: {r: 1, g: 0, b: 0, a: 1}
