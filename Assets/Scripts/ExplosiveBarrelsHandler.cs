@@ -16,12 +16,14 @@ public class ExplosiveBarrelsHandler : MonoBehaviour
         var handlerPosition = transform.position;
         foreach (var barrel in ExistingBarrels)
         {
+            if (barrel.TypeBarrel == null)
+                continue;
             var barrelPosition = barrel.transform.position;
             var halfHeight = (handlerPosition.y - barrelPosition.y) * .5f;
             var tangentOffset = Vector3.up * halfHeight;
             Handles.DrawBezier(handlerPosition, barrelPosition,
                 handlerPosition - tangentOffset, barrelPosition + tangentOffset,
-                barrel.BarrelColor,
+                barrel.TypeBarrel.BarrelColor,
                 EditorGUIUtility.whiteTexture,
                 1f);
         }
