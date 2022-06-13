@@ -36,6 +36,12 @@ public class ExplosiveBarrel : MonoBehaviour
         ExplosiveBarrelsHandler.ExistingBarrels.Remove(this);
     }
 
+    [ContextMenu("Do something")]
+    private void DoSomething()
+    {
+        
+    }
+
     private void OnDrawGizmos()
     {
         if (TypeBarrel == null)
