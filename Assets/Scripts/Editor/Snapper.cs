@@ -20,14 +20,4 @@ public static class Snapper
             go.transform.position = go.transform.position.Round();
         }
     }
-
-    public static Vector3 Round(this Vector3 v)
-    {
-        for (var i = 0; i < 3; i++)
-        {
-            v[i] = Mathf.Round(v[i]);
-        }
-
-        return v;
-    }
 }
