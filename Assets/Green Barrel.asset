@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9228c68e4e9fe3a4d8b5cc28bfa71a77, type: 3}
   m_Name: Green Barrel
   m_EditorClassIdentifier: 
-  Radius: 5.7
+  Radius: 5.84
   Damage: 10
-  BarrelColor: {r: 0.46569067, g: 0.8584906, b: 0.47135606, a: 1}
+  BarrelColor: {r: 0.11792451, g: 1, b: 0.12674525, a: 1}
