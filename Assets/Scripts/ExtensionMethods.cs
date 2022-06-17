@@ -17,17 +17,8 @@ public static class ExtensionMethods
         return Round(v / size) * size;
     }
 
-    public static Vector3 Round(this Vector3 v, float distanceSize, float angleSize)
+    public static float Round(this float v, float step)
     {
-        v.Round(distanceSize);
-        var currentAngle = Mathf.Asin(v.z / Mathf.Sqrt(v.sqrMagnitude)) * Mathf.Rad2Deg;
-        //TODO: snap angle and find new position
-        // var newAngle = RoundAngle(currentAngle, angleSize);
-        return Vector3.zero;
-    }
-
-    private static float RoundAngle(float angle, float step)
-    {
-        return Mathf.Round(angle / step) * step;
+        return Mathf.Round(v / step) * step;
     }
 }
