@@ -88,20 +88,21 @@ public class SnapperTool : EditorWindow
     private void DrawPolarGrid()
     {
         var circlesAmount = Mathf.RoundToInt(_polarExtent / _gridStep);
+        var radiusOuter = circlesAmount * _gridStep;
         int linesCount;
-        Vector3 rotationAngle;
+        // Vector3 rotationAngle;
         if (_useAngularDivision)
         {
             linesCount = _angularDivisions;
-            rotationAngle = Vector3.up * (360f / linesCount);
+            // rotationAngle = Vector3.up * (360f / linesCount);
         }
         else
         {
             linesCount = _angleStep > 0 ? Mathf.FloorToInt(360 / _angleStep) : 0;
-            rotationAngle = Vector3.up * _angleStep;
+            // rotationAngle = Vector3.up * _angleStep;
         }
                 
-        var rotation = Matrix4x4.Rotate(Quaternion.Euler(rotationAngle));
+        // var rotation = Matrix4x4.Rotate(Quaternion.Euler(rotationAngle));
 
         Handles.color = Color.black;
         Handles.zTest = CompareFunction.LessEqual;
@@ -110,12 +111,23 @@ public class SnapperTool : EditorWindow
             Handles.DrawWireDisc(Vector3.zero, Vector3.up, _gridStep * i);
         }
 
-        var nextPoint = Vector3.right * (circlesAmount * _gridStep);
+        const float TAU = 6.28318530718f;
         for (var i = 0; i < linesCount; i++)
         {
-            Handles.DrawAAPolyLine(Vector3.zero, nextPoint);
-            nextPoint = rotation * nextPoint;
+            var t = i / (float)linesCount;
+            var angRad = t * TAU; //turns to radians
+            var x = Mathf.Cos(angRad);
+            var z = Mathf.Sin(angRad);
+            var dir = new Vector3(x, 0, z);
+            Handles.DrawAAPolyLine(Vector3.zero, dir * radiusOuter);
         }
+
+        // var nextPoint = Vector3.right * (circlesAmount * _gridStep);
+        // for (var i = 0; i < linesCount; i++)
+        // {
+        //     Handles.DrawAAPolyLine(Vector3.zero, nextPoint);
+        //     nextPoint = rotation * nextPoint;
+        // }
     }
 
     private void DrawCartesianGrid()
