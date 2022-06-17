@@ -8,6 +8,7 @@ using UnityEngine.Rendering;
 public class SnapperTool : EditorWindow
 {
     private const string UNDO_SNAP = "snap objects";
+    private const float TAU = 6.28318530718f;
 
     private enum GridType
     {
@@ -110,8 +111,7 @@ public class SnapperTool : EditorWindow
         {
             Handles.DrawWireDisc(Vector3.zero, Vector3.up, _gridStep * i);
         }
-
-        const float TAU = 6.28318530718f;
+        
         for (var i = 0; i < linesCount; i++)
         {
             var t = i / (float)linesCount;
@@ -120,6 +120,23 @@ public class SnapperTool : EditorWindow
             var z = Mathf.Sin(angRad);
             var dir = new Vector3(x, 0, z);
             Handles.DrawAAPolyLine(Vector3.zero, dir * radiusOuter);
+        }
+
+        foreach (var obj in Selection.gameObjects)
+        {
+            var snappedPosition = GetSnappedPosition(obj.transform.position);
+            
+            Handles.color = Color.red;
+            Handles.zTest = CompareFunction.Always;
+                
+            Handles.SphereHandleCap(0,
+                snappedPosition,
+                Quaternion.identity,
+                _snapPositionIndicatorSize,
+                EventType.Repaint);
+
+            Handles.color = Color.black;
+            Handles.zTest = CompareFunction.LessEqual;
         }
 
         // var nextPoint = Vector3.right * (circlesAmount * _gridStep);
@@ -140,7 +157,7 @@ public class SnapperTool : EditorWindow
         foreach (var obj in Selection.gameObjects)
         {
             var pos = obj.transform.position;
-            var center = pos.Round(_gridStep);
+            var center = GetSnappedPosition(pos);
 
             Handles.color = Color.red;
             Handles.zTest = CompareFunction.Always;
@@ -224,8 +241,43 @@ public class SnapperTool : EditorWindow
         {
             Undo.RecordObject(go.transform, UNDO_SNAP);
 
-            var newPosition = go.transform.position;
-            go.transform.position = newPosition.Round(_gridStep);
+            var objPosition = go.transform.position;
+            go.transform.position = GetSnappedPosition(objPosition);
+        }
+    }
+
+    private Vector3 GetSnappedPosition(Vector3 originalPos)
+    {
+        switch (_gridType)
+        {
+            case GridType.Cartesian:
+            default:
+                return originalPos.Round(_gridStep);
+            case GridType.Polar:
+            {
+                var v = new Vector2(originalPos.x, originalPos.z);
+                var dist = v.magnitude;
+                var snappedDistance = dist.Round(_gridStep);
+
+                var angRad = Mathf.Atan2(v.y, v.x); // from 0 to TAU
+                var angTurns = angRad / TAU; // from 0 to 1
+                float angTurnsSnapped;
+                if (_useAngularDivision)
+                {
+                    angTurnsSnapped = angTurns.Round(1f / _angularDivisions);
+                }
+                else
+                {
+                    var divisions = _angleStep > 0 ? Mathf.FloorToInt(360 / _angleStep) : 0;
+                    angTurnsSnapped = angTurns.Round(1f / divisions);
+                }
+
+                var angRadSnapped = angTurnsSnapped * TAU;
+
+                var newX = snappedDistance * Mathf.Cos(angRadSnapped);
+                var newZ = snappedDistance * Mathf.Sin(angRadSnapped);
+                return new Vector3(newX, 0, newZ);
+            }
         }
     }
 }
