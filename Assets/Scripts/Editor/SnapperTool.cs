@@ -1,55 +1,75 @@
+using System;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-//TODO: 3. додати підтримку для полярної системи координат
-//TODO: 4. зробити сітку зберігатися між сесіями Юніті(закрив і відкрив Юніті - сітка зберігла свої параметри)
-
 public class SnapperTool : EditorWindow
 {
+    private string SAVE_PATH = Path.Combine(@"D:\Projects\Editor scripting playground\Assets\Scripts\Editor", "SnapperData.snp");
     private const string UNDO_SNAP = "snap objects";
     private const float TAU = 6.28318530718f;
 
-    private enum GridType
+    public enum GridType
     {
         Cartesian,
         Polar
     }
-    // [SerializeField] private bool _polarGrid;
-    [SerializeField] private GridType _gridType;
-    [SerializeField] private bool _useAngularDivision;
-    [SerializeField] private int _angularDivisions = 24;
-    [SerializeField] private float _angleStep;
-    // [SerializeField] private float _distanceStep;
-    [SerializeField] private float _gridStep = 1f;
-    [SerializeField] private float _cartesianExtent = 3f;
-    [SerializeField] private float _polarExtent = 3f;
+
+    [Serializable]
+    public class GridData
+    {
+        public GridType Grid;
+        public bool UseAngularDivision;
+        public int AngularDivisions = 24;
+        public float AngleStep = 15f;
+        public float GridStep = 1f;
+        public float CartesianExtent = 3f;
+        public float PolarExtent = 3f;
+    }
+
+    [SerializeField] private GridData _gridData;
+    
     private float _snapPositionIndicatorSize = .1f;
 
     private SerializedObject _so;
     private SerializedProperty _propUseAngularDivision;
     private SerializedProperty _propAngularDivisions;
     private SerializedProperty _propAngleStep;
-    // private SerializedProperty _propDistanceStep;
     private SerializedProperty _propGridType;
     private SerializedProperty _propGridStep;
     private SerializedProperty _propCartesianExtent;
     private SerializedProperty _propPolarExtent;
+    private SerializedProperty _propGridData;
 
     [MenuItem("Tools/Snapper")]
     private static void OpenSnapperTool() => GetWindow<SnapperTool>("Snapper");
 
     private void OnEnable()
     {
+        try
+        {
+            if (File.Exists(SAVE_PATH))
+            {
+                var json = File.ReadAllText(SAVE_PATH);
+                _gridData = JsonUtility.FromJson<GridData>(json);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e);
+            _gridData = new GridData();
+        }
+
         _so = new SerializedObject(this);
-        _propUseAngularDivision = _so.FindProperty(nameof(_useAngularDivision));
-        _propAngularDivisions = _so.FindProperty(nameof(_angularDivisions));
-        _propAngleStep = _so.FindProperty(nameof(_angleStep));
-        // _propDistanceStep = _so.FindProperty(nameof(_distanceStep));
-        _propGridType = _so.FindProperty(nameof(_gridType));
-        _propGridStep = _so.FindProperty(nameof(_gridStep));
-        _propCartesianExtent = _so.FindProperty(nameof(_cartesianExtent));
-        _propPolarExtent = _so.FindProperty(nameof(_polarExtent));
+        _propGridData = _so.FindProperty(nameof(_gridData));
+        _propUseAngularDivision = _propGridData.FindPropertyRelative(nameof(_gridData.UseAngularDivision));
+        _propAngularDivisions = _propGridData.FindPropertyRelative(nameof(_gridData.AngularDivisions));
+        _propAngleStep = _propGridData.FindPropertyRelative(nameof(_gridData.AngleStep));
+        _propGridType = _propGridData.FindPropertyRelative(nameof(_gridData.Grid));
+        _propGridStep = _propGridData.FindPropertyRelative(nameof(_gridData.GridStep));
+        _propCartesianExtent = _propGridData.FindPropertyRelative(nameof(_gridData.CartesianExtent));
+        _propPolarExtent = _propGridData.FindPropertyRelative(nameof(_gridData.PolarExtent));
 
         Selection.selectionChanged += Repaint;
         SceneView.duringSceneGui += DuringSceneGUI;
@@ -57,6 +77,8 @@ public class SnapperTool : EditorWindow
 
     private void OnDisable()
     {
+        var json = JsonUtility.ToJson(_gridData, true);
+        File.WriteAllText(SAVE_PATH, json);
         Selection.selectionChanged -= Repaint;
         SceneView.duringSceneGui -= DuringSceneGUI;
     }
@@ -68,7 +90,7 @@ public class SnapperTool : EditorWindow
         if (Event.current.type != EventType.Repaint)
             return;
 
-        switch (_gridType)
+        switch (_gridData.Grid)
         {
             case GridType.Polar:
             {
@@ -88,18 +110,18 @@ public class SnapperTool : EditorWindow
 
     private void DrawPolarGrid()
     {
-        var circlesAmount = Mathf.RoundToInt(_polarExtent / _gridStep);
-        var radiusOuter = circlesAmount * _gridStep;
+        var circlesAmount = Mathf.RoundToInt(_gridData.PolarExtent / _gridData.GridStep);
+        var radiusOuter = circlesAmount * _gridData.GridStep;
         int linesCount;
         // Vector3 rotationAngle;
-        if (_useAngularDivision)
+        if (_gridData.UseAngularDivision)
         {
-            linesCount = _angularDivisions;
+            linesCount = _gridData.AngularDivisions;
             // rotationAngle = Vector3.up * (360f / linesCount);
         }
         else
         {
-            linesCount = _angleStep > 0 ? Mathf.FloorToInt(360 / _angleStep) : 0;
+            linesCount = _gridData.AngleStep > 0 ? Mathf.FloorToInt(360 / _gridData.AngleStep) : 0;
             // rotationAngle = Vector3.up * _angleStep;
         }
                 
@@ -109,7 +131,7 @@ public class SnapperTool : EditorWindow
         Handles.zTest = CompareFunction.LessEqual;
         for (var i = 1; i <= circlesAmount; i++)
         {
-            Handles.DrawWireDisc(Vector3.zero, Vector3.up, _gridStep * i);
+            Handles.DrawWireDisc(Vector3.zero, Vector3.up, _gridData.GridStep * i);
         }
         
         for (var i = 0; i < linesCount; i++)
@@ -149,7 +171,7 @@ public class SnapperTool : EditorWindow
 
     private void DrawCartesianGrid()
     {
-        var lineCount = Mathf.RoundToInt((_cartesianExtent * 2) / _gridStep);
+        var lineCount = Mathf.RoundToInt((_gridData.CartesianExtent * 2) / _gridData.GridStep);
         if (lineCount % 2 == 0)
             lineCount++;
         var halfLineCount = lineCount / 2;
@@ -175,16 +197,16 @@ public class SnapperTool : EditorWindow
             {
                 var offset = i - halfLineCount;
 
-                var x = offset * _gridStep + center.x;
-                var z0 = center.z + halfLineCount * _gridStep;
-                var z1 = center.z - halfLineCount * _gridStep;
+                var x = offset * _gridData.GridStep + center.x;
+                var z0 = center.z + halfLineCount * _gridData.GridStep;
+                var z1 = center.z - halfLineCount * _gridData.GridStep;
                 var p0 = new Vector3(x, center.y, z0);
                 var p1 = new Vector3(x, center.y, z1);
                 Handles.DrawAAPolyLine(p0, p1);
 
-                x = offset * _gridStep + center.z;
-                z0 = center.x + halfLineCount * _gridStep;
-                z1 = center.x - halfLineCount * _gridStep;
+                x = offset * _gridData.GridStep + center.z;
+                z0 = center.x + halfLineCount * _gridData.GridStep;
+                z1 = center.x - halfLineCount * _gridData.GridStep;
                 p0.Set(z0, center.y, x);
                 p1.Set(z1, center.y, x);
                 Handles.DrawAAPolyLine(p0, p1);
@@ -201,18 +223,18 @@ public class SnapperTool : EditorWindow
         {
             using (new EditorGUILayout.VerticalScope())
             {
-                using (new EditorGUI.DisabledScope(_gridType == GridType.Polar))
+                using (new EditorGUI.DisabledScope(_gridData.Grid == GridType.Polar))
                 {
                     EditorGUILayout.PropertyField(_propCartesianExtent);
                 }
             }
             using (new EditorGUILayout.VerticalScope())
             {
-                using (new EditorGUI.DisabledScope(_gridType == GridType.Cartesian))
+                using (new EditorGUI.DisabledScope(_gridData.Grid == GridType.Cartesian))
                 {
                     EditorGUILayout.PropertyField(_propPolarExtent);
                     EditorGUILayout.PropertyField(_propUseAngularDivision);
-                    if (_useAngularDivision)
+                    if (_gridData.UseAngularDivision)
                     {
                         EditorGUILayout.PropertyField(_propAngularDivisions);
                         _propAngularDivisions.intValue = Mathf.Max(3, _propAngularDivisions.intValue);
@@ -248,27 +270,27 @@ public class SnapperTool : EditorWindow
 
     private Vector3 GetSnappedPosition(Vector3 originalPos)
     {
-        switch (_gridType)
+        switch (_gridData.Grid)
         {
             case GridType.Cartesian:
             default:
-                return originalPos.Round(_gridStep);
+                return originalPos.Round(_gridData.GridStep);
             case GridType.Polar:
             {
                 var v = new Vector2(originalPos.x, originalPos.z);
                 var dist = v.magnitude;
-                var snappedDistance = dist.Round(_gridStep);
+                var snappedDistance = dist.Round(_gridData.GridStep);
 
                 var angRad = Mathf.Atan2(v.y, v.x); // from 0 to TAU
                 var angTurns = angRad / TAU; // from 0 to 1
                 float angTurnsSnapped;
-                if (_useAngularDivision)
+                if (_gridData.UseAngularDivision)
                 {
-                    angTurnsSnapped = angTurns.Round(1f / _angularDivisions);
+                    angTurnsSnapped = angTurns.Round(1f / _gridData.AngularDivisions);
                 }
                 else
                 {
-                    var divisions = _angleStep > 0 ? Mathf.FloorToInt(360 / _angleStep) : 0;
+                    var divisions = _gridData.AngleStep > 0 ? Mathf.FloorToInt(360 / _gridData.AngleStep) : 0;
                     angTurnsSnapped = angTurns.Round(1f / divisions);
                 }
 
