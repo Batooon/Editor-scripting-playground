@@ -63,3 +63,7 @@ crashlytics-build.properties
 
 
 .idea/.idea.Editor scripting playground/.idea/
+
+*.snp
+
+Assets/Scripts/Editor/SnapperData.snp.meta
